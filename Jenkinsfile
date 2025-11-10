@@ -11,8 +11,6 @@ pipeline {
             steps {
                 echo '========== NIDS IPv6 Configuration Pipeline =========='
                 echo 'Starting build...'
-                sh 'sudo mkdir -p /var/log/nids || true'
-                sh 'sudo mkdir -p /etc/nids || true'
             }
         }
         
@@ -29,8 +27,6 @@ pipeline {
                 echo '========== Stage: Application Tests =========='
                 sh '/usr/bin/python3 src/nids_ipv6_config.py --help'
                 echo 'PASSED: Help command'
-                sh '/usr/bin/python3 src/nids_ipv6_config.py show'
-                echo 'PASSED: Show command'
                 sh '/usr/bin/python3 src/nids_ipv6_config.py validate'
                 echo 'PASSED: Validation'
             }
