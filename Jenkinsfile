@@ -11,6 +11,8 @@ pipeline {
             steps {
                 echo '========== NIDS IPv6 Configuration Pipeline =========='
                 echo 'Starting build...'
+                sh 'sudo mkdir -p /var/log/nids || true'
+                sh 'sudo mkdir -p /etc/nids || true'
             }
         }
         
