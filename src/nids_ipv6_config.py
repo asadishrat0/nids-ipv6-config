@@ -13,23 +13,39 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
+import tempfile
 
-# Configuration paths
+# Configuration paths - Use temp directory if /var/log/nids not available
 CONFIG_DIR = Path("/etc/nids")
 CONFIG_FILE = CONFIG_DIR / "ipv6_config.json"
-LOG_FILE = Path("/var/log/nids/ipv6_config.log")
-LOG_DIR = LOG_FILE.parent
+
+# Use temp directory for logs if /var/log/nids is not writable
+try:
+    LOG_DIR = Path("/var/log/nids")
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    LOG_DIR = Path(tempfile.gettempdir()) / "nids"
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOG_FILE = LOG_DIR / "ipv6_config.log"
 
 # Setup logging
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler()
-    ]
-)
+try:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(LOG_FILE),
+            logging.StreamHandler()
+        ]
+    )
+except Exception:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler()]
+    )
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,9 +76,12 @@ class NIDSIPv6ConfigManager:
     
     def _ensure_directories(self) -> None:
         """Ensure required directories exist"""
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Directories ensured: {CONFIG_DIR}, {LOG_DIR}")
+        try:
+            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Directories ensured: {CONFIG_DIR}, {LOG_DIR}")
+        except Exception as e:
+            logger.warning(f"Could not create directories: {e}")
     
     def _load_config(self) -> None:
         """Load configuration from file"""
@@ -77,7 +96,10 @@ class NIDSIPv6ConfigManager:
                 self._save_config()
         else:
             logger.info("No existing config found. Creating with defaults.")
-            self._save_config()
+            try:
+                self._save_config()
+            except Exception as e:
+                logger.warning(f"Could not save config: {e}")
     
     def _save_config(self) -> None:
         """Save configuration to file"""
@@ -85,11 +107,13 @@ class NIDSIPv6ConfigManager:
             self.config_file.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config_file, 'w') as f:
                 json.dump(asdict(self.config), f, indent=2)
-            os.chmod(self.config_file, 0o640)
+            try:
+                os.chmod(self.config_file, 0o640)
+            except Exception:
+                pass
             logger.info(f"Configuration saved to {self.config_file}")
         except Exception as e:
             logger.error(f"Failed to save config: {e}")
-            raise
     
     def enable_ipv6(self) -> None:
         """Enable IPv6 monitoring"""
@@ -234,56 +258,41 @@ Examples:
     
     subparsers = parser.add_subparsers(dest='command', help='Commands')
     
-    # Show command
     subparsers.add_parser('show', help='Show current configuration')
-    
-    # Enable command
     subparsers.add_parser('enable', help='Enable IPv6 monitoring')
-    
-    # Disable command
     subparsers.add_parser('disable', help='Disable IPv6 monitoring')
     
-    # Set address command
     address_parser = subparsers.add_parser('set-address', help='Set IPv6 listen address')
     address_parser.add_argument('address', help='IPv6 address (e.g., ::, ::1)')
     
-    # Set port command
     port_parser = subparsers.add_parser('set-port', help='Set listen port')
     port_parser.add_argument('port', type=int, help='Port number (1-65535)')
     
-    # Set logging level command
     log_parser = subparsers.add_parser('set-log-level', help='Set logging level')
     log_parser.add_argument('level', help='Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
     
-    # Set PCAP filter command
     pcap_parser = subparsers.add_parser('set-pcap-filter', help='Set PCAP filter')
     pcap_parser.add_argument('filter', help='PCAP filter expression')
     
-    # Traffic rules command
     subparsers.add_parser('enable-rules', help='Enable traffic rules')
     subparsers.add_parser('disable-rules', help='Disable traffic rules')
-    
-    # Monitoring command
     subparsers.add_parser('enable-monitoring', help='Enable monitoring')
     subparsers.add_parser('disable-monitoring', help='Disable monitoring')
     
-    # Alert threshold command
     threshold_parser = subparsers.add_parser('set-alert-threshold', help='Set alert threshold')
     threshold_parser.add_argument('threshold', type=int, help='Alert threshold value')
     
-    # Stats interval command
     stats_parser = subparsers.add_parser('set-stats-interval', help='Set statistics interval')
     stats_parser.add_argument('interval', type=int, help='Interval in seconds')
     
-    # Validate command
     subparsers.add_parser('validate', help='Validate configuration')
     
     args = parser.parse_args()
     
-    # Check if running as root for most operations
-    if os.geteuid() != 0 and args.command not in ['show', 'validate', None]:
-        print("Error: This command requires root privileges")
-        sys.exit(1)
+    if os.name != 'nt':
+        if os.geteuid() != 0 and args.command not in ['show', 'validate', None]:
+            print("Error: This command requires root privileges")
+            sys.exit(1)
     
     try:
         manager = NIDSIPv6ConfigManager()
