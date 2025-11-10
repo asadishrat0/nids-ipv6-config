@@ -17,7 +17,7 @@ pipeline {
         stage('Code Quality') {
             steps {
                 echo '========== Stage: Code Quality =========='
-                sh 'python3 -m py_compile src/nids_ipv6_config.py'
+                sh '/usr/bin/python3 -m py_compile src/nids_ipv6_config.py'
                 echo 'PASSED: Python syntax validation'
             }
         }
@@ -25,11 +25,11 @@ pipeline {
         stage('Application Tests') {
             steps {
                 echo '========== Stage: Application Tests =========='
-                sh 'python3 src/nids_ipv6_config.py --help'
+                sh '/usr/bin/python3 src/nids_ipv6_config.py --help'
                 echo 'PASSED: Help command'
-                sh 'python3 src/nids_ipv6_config.py show'
+                sh '/usr/bin/python3 src/nids_ipv6_config.py show'
                 echo 'PASSED: Show command'
-                sh 'python3 src/nids_ipv6_config.py validate'
+                sh '/usr/bin/python3 src/nids_ipv6_config.py validate'
                 echo 'PASSED: Validation'
             }
         }
