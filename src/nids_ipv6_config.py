@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 NIDS IPv6 Configuration Application
-Manages IPv6 network intrusion detection system settings on Ubuntu 22.04 LTS and Red Hat 9.6
 """
 
 import json
@@ -10,41 +9,26 @@ import sys
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from dataclasses import dataclass, asdict
-from datetime import datetime
 import tempfile
 
-# Configuration paths - Use temp directory if /var/log/nids not available
-CONFIG_DIR = Path("/etc/nids")
-CONFIG_FILE = CONFIG_DIR / "ipv6_config.json"
+# Use temp directory for configuration and logs
+TEMP_DIR = Path(tempfile.gettempdir()) / "nids"
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
-# Use temp directory for logs if /var/log/nids is not writable
-try:
-    LOG_DIR = Path("/var/log/nids")
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-except PermissionError:
-    LOG_DIR = Path(tempfile.gettempdir()) / "nids"
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-LOG_FILE = LOG_DIR / "ipv6_config.log"
+CONFIG_FILE = TEMP_DIR / "ipv6_config.json"
+LOG_FILE = TEMP_DIR / "ipv6_config.log"
 
 # Setup logging
-try:
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(LOG_FILE),
-            logging.StreamHandler()
-        ]
-    )
-except Exception:
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[logging.StreamHandler()]
-    )
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,17 +55,7 @@ class NIDSIPv6ConfigManager:
         """Initialize configuration manager"""
         self.config = IPv6Config()
         self.config_file = CONFIG_FILE
-        self._ensure_directories()
         self._load_config()
-    
-    def _ensure_directories(self) -> None:
-        """Ensure required directories exist"""
-        try:
-            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-            LOG_DIR.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Directories ensured: {CONFIG_DIR}, {LOG_DIR}")
-        except Exception as e:
-            logger.warning(f"Could not create directories: {e}")
     
     def _load_config(self) -> None:
         """Load configuration from file"""
@@ -90,28 +64,20 @@ class NIDSIPv6ConfigManager:
                 with open(self.config_file, 'r') as f:
                     data = json.load(f)
                     self.config = IPv6Config(**data)
-                logger.info(f"Configuration loaded from {self.config_file}")
+                logger.info(f"Configuration loaded")
             except Exception as e:
-                logger.error(f"Failed to load config: {e}. Using defaults.")
+                logger.error(f"Failed to load config: {e}")
                 self._save_config()
         else:
-            logger.info("No existing config found. Creating with defaults.")
-            try:
-                self._save_config()
-            except Exception as e:
-                logger.warning(f"Could not save config: {e}")
+            logger.info("Creating default configuration")
+            self._save_config()
     
     def _save_config(self) -> None:
         """Save configuration to file"""
         try:
-            self.config_file.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config_file, 'w') as f:
                 json.dump(asdict(self.config), f, indent=2)
-            try:
-                os.chmod(self.config_file, 0o640)
-            except Exception:
-                pass
-            logger.info(f"Configuration saved to {self.config_file}")
+            logger.info(f"Configuration saved")
         except Exception as e:
             logger.error(f"Failed to save config: {e}")
     
@@ -119,13 +85,13 @@ class NIDSIPv6ConfigManager:
         """Enable IPv6 monitoring"""
         self.config.ipv6_enabled = True
         self._save_config()
-        logger.info("IPv6 monitoring enabled")
+        logger.info("IPv6 enabled")
     
     def disable_ipv6(self) -> None:
         """Disable IPv6 monitoring"""
         self.config.ipv6_enabled = False
         self._save_config()
-        logger.info("IPv6 monitoring disabled")
+        logger.info("IPv6 disabled")
     
     def set_listen_address(self, address: str) -> None:
         """Set IPv6 listen address"""
@@ -133,30 +99,30 @@ class NIDSIPv6ConfigManager:
             raise ValueError(f"Invalid IPv6 address: {address}")
         self.config.listen_address = address
         self._save_config()
-        logger.info(f"Listen address set to {address}")
+        logger.info(f"Address set to {address}")
     
     def set_listen_port(self, port: int) -> None:
         """Set listen port"""
         if not (1 <= port <= 65535):
-            raise ValueError(f"Invalid port number: {port}")
+            raise ValueError(f"Invalid port: {port}")
         self.config.listen_port = port
         self._save_config()
-        logger.info(f"Listen port set to {port}")
+        logger.info(f"Port set to {port}")
     
     def set_logging_level(self, level: str) -> None:
         """Set logging level"""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if level.upper() not in valid_levels:
-            raise ValueError(f"Invalid logging level: {level}")
+            raise ValueError(f"Invalid level: {level}")
         self.config.logging_level = level.upper()
         self._save_config()
-        logger.info(f"Logging level set to {level}")
+        logger.info(f"Log level set to {level}")
     
     def set_pcap_filter(self, filter_str: str) -> None:
         """Set packet capture filter"""
         self.config.pcap_filter = filter_str
         self._save_config()
-        logger.info(f"PCAP filter set to {filter_str}")
+        logger.info(f"PCAP filter set")
     
     def enable_traffic_rules(self) -> None:
         """Enable traffic rules"""
@@ -185,25 +151,25 @@ class NIDSIPv6ConfigManager:
     def set_alert_threshold(self, threshold: int) -> None:
         """Set alert threshold"""
         if threshold < 1:
-            raise ValueError(f"Alert threshold must be positive: {threshold}")
+            raise ValueError(f"Threshold must be positive")
         self.config.alert_threshold = threshold
         self._save_config()
-        logger.info(f"Alert threshold set to {threshold}")
+        logger.info(f"Alert threshold set")
     
     def set_stats_interval(self, interval: int) -> None:
         """Set statistics interval"""
         if interval < 1:
-            raise ValueError(f"Stats interval must be positive: {interval}")
+            raise ValueError(f"Interval must be positive")
         self.config.stats_interval = interval
         self._save_config()
-        logger.info(f"Stats interval set to {interval}")
+        logger.info(f"Stats interval set")
     
     def get_config(self) -> Dict[str, Any]:
         """Get current configuration"""
         return asdict(self.config)
     
     def show_config(self) -> str:
-        """Display configuration in formatted way"""
+        """Display configuration"""
         config_dict = self.get_config()
         output = "\n=== NIDS IPv6 Configuration ===\n"
         for key, value in config_dict.items():
@@ -217,15 +183,13 @@ class NIDSIPv6ConfigManager:
             if not isinstance(self.config.ipv6_enabled, bool):
                 raise ValueError("ipv6_enabled must be boolean")
             if not (1 <= self.config.listen_port <= 65535):
-                raise ValueError("listen_port out of range")
+                raise ValueError("port out of range")
             if self.config.logging_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
-                raise ValueError("invalid logging_level")
-            if self.config.alert_threshold < 1:
-                raise ValueError("alert_threshold must be positive")
-            logger.info("Configuration validation successful")
+                raise ValueError("invalid log level")
+            logger.info("Validation successful")
             return True
         except Exception as e:
-            logger.error(f"Configuration validation failed: {e}")
+            logger.error(f"Validation failed: {e}")
             return False
     
     @staticmethod
@@ -242,57 +206,40 @@ class NIDSIPv6ConfigManager:
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="NIDS IPv6 Configuration Manager",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  nids-ipv6-config show
-  nids-ipv6-config enable
-  nids-ipv6-config disable
-  nids-ipv6-config set-address ::
-  nids-ipv6-config set-port 25826
-  nids-ipv6-config set-log-level DEBUG
-  nids-ipv6-config validate
-        """
+        description="NIDS IPv6 Configuration Manager"
     )
     
     subparsers = parser.add_subparsers(dest='command', help='Commands')
+    subparsers.add_parser('show', help='Show configuration')
+    subparsers.add_parser('enable', help='Enable IPv6')
+    subparsers.add_parser('disable', help='Disable IPv6')
     
-    subparsers.add_parser('show', help='Show current configuration')
-    subparsers.add_parser('enable', help='Enable IPv6 monitoring')
-    subparsers.add_parser('disable', help='Disable IPv6 monitoring')
+    address_parser = subparsers.add_parser('set-address', help='Set address')
+    address_parser.add_argument('address', help='IPv6 address')
     
-    address_parser = subparsers.add_parser('set-address', help='Set IPv6 listen address')
-    address_parser.add_argument('address', help='IPv6 address (e.g., ::, ::1)')
+    port_parser = subparsers.add_parser('set-port', help='Set port')
+    port_parser.add_argument('port', type=int, help='Port number')
     
-    port_parser = subparsers.add_parser('set-port', help='Set listen port')
-    port_parser.add_argument('port', type=int, help='Port number (1-65535)')
-    
-    log_parser = subparsers.add_parser('set-log-level', help='Set logging level')
-    log_parser.add_argument('level', help='Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
+    log_parser = subparsers.add_parser('set-log-level', help='Set log level')
+    log_parser.add_argument('level', help='Log level')
     
     pcap_parser = subparsers.add_parser('set-pcap-filter', help='Set PCAP filter')
-    pcap_parser.add_argument('filter', help='PCAP filter expression')
+    pcap_parser.add_argument('filter', help='PCAP filter')
     
-    subparsers.add_parser('enable-rules', help='Enable traffic rules')
-    subparsers.add_parser('disable-rules', help='Disable traffic rules')
+    subparsers.add_parser('enable-rules', help='Enable rules')
+    subparsers.add_parser('disable-rules', help='Disable rules')
     subparsers.add_parser('enable-monitoring', help='Enable monitoring')
     subparsers.add_parser('disable-monitoring', help='Disable monitoring')
     
-    threshold_parser = subparsers.add_parser('set-alert-threshold', help='Set alert threshold')
-    threshold_parser.add_argument('threshold', type=int, help='Alert threshold value')
+    threshold_parser = subparsers.add_parser('set-alert-threshold', help='Set threshold')
+    threshold_parser.add_argument('threshold', type=int, help='Threshold value')
     
-    stats_parser = subparsers.add_parser('set-stats-interval', help='Set statistics interval')
-    stats_parser.add_argument('interval', type=int, help='Interval in seconds')
+    stats_parser = subparsers.add_parser('set-stats-interval', help='Set stats interval')
+    stats_parser.add_argument('interval', type=int, help='Interval seconds')
     
-    subparsers.add_parser('validate', help='Validate configuration')
+    subparsers.add_parser('validate', help='Validate config')
     
     args = parser.parse_args()
-    
-    if os.name != 'nt':
-        if os.geteuid() != 0 and args.command not in ['show', 'validate', None]:
-            print("Error: This command requires root privileges")
-            sys.exit(1)
     
     try:
         manager = NIDSIPv6ConfigManager()
@@ -301,28 +248,28 @@ Examples:
             print(manager.show_config())
         elif args.command == 'enable':
             manager.enable_ipv6()
-            print("✓ IPv6 monitoring enabled")
+            print("✓ IPv6 enabled")
         elif args.command == 'disable':
             manager.disable_ipv6()
-            print("✓ IPv6 monitoring disabled")
+            print("✓ IPv6 disabled")
         elif args.command == 'set-address':
             manager.set_listen_address(args.address)
-            print(f"✓ Listen address set to {args.address}")
+            print(f"✓ Address set to {args.address}")
         elif args.command == 'set-port':
             manager.set_listen_port(args.port)
-            print(f"✓ Listen port set to {args.port}")
+            print(f"✓ Port set to {args.port}")
         elif args.command == 'set-log-level':
             manager.set_logging_level(args.level)
-            print(f"✓ Logging level set to {args.level}")
+            print(f"✓ Log level set to {args.level}")
         elif args.command == 'set-pcap-filter':
             manager.set_pcap_filter(args.filter)
-            print(f"✓ PCAP filter set to {args.filter}")
+            print(f"✓ PCAP filter set")
         elif args.command == 'enable-rules':
             manager.enable_traffic_rules()
-            print("✓ Traffic rules enabled")
+            print("✓ Rules enabled")
         elif args.command == 'disable-rules':
             manager.disable_traffic_rules()
-            print("✓ Traffic rules disabled")
+            print("✓ Rules disabled")
         elif args.command == 'enable-monitoring':
             manager.enable_monitoring()
             print("✓ Monitoring enabled")
@@ -331,10 +278,10 @@ Examples:
             print("✓ Monitoring disabled")
         elif args.command == 'set-alert-threshold':
             manager.set_alert_threshold(args.threshold)
-            print(f"✓ Alert threshold set to {args.threshold}")
+            print(f"✓ Threshold set")
         elif args.command == 'set-stats-interval':
             manager.set_stats_interval(args.interval)
-            print(f"✓ Stats interval set to {args.interval}")
+            print(f"✓ Stats interval set")
         elif args.command == 'validate':
             if manager.validate_configuration():
                 print("✓ Configuration is valid")
