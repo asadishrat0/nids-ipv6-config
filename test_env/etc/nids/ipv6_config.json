@@ -1,0 +1,12 @@
+{
+  "ipv6_enabled": true,
+  "listen_address": "::",
+  "listen_port": 25826,
+  "monitoring_enabled": true,
+  "traffic_rules_enabled": true,
+  "logging_level": "INFO",
+  "max_packet_size": 65535,
+  "pcap_filter": "ip6",
+  "alert_threshold": 100,
+  "stats_interval": 60
+}

@@ -1,0 +1,11 @@
+Package: nids-ipv6-config
+Version: 1.0.0-1
+Architecture: all
+Maintainer: DevOps Team <devops@example.com>
+Depends: python3 (>= 3.9)
+Homepage: https://github.com/your-org/nids-ipv6-config
+Description: Network Intrusion Detection System IPv6 Configuration Application
+ A configuration application for managing Network Intrusion Detection System
+ (NIDS) IPv6 settings on Ubuntu 22.04 LTS and Red Hat 9.6 systems.
+ Provides command-line interface for IPv6 mode capability configuration,
+ monitoring enablement, traffic rules management, and comprehensive logging.

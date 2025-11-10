@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+if [ ! -f /etc/nids/ipv6_config.json ]; then
+    cp /etc/nids/ipv6_config.json.example /etc/nids/ipv6_config.json
+    chmod 0640 /etc/nids/ipv6_config.json
+fi
+mkdir -p /var/log/nids
+chmod 0755 /var/log/nids
+/usr/bin/nids-ipv6-config validate
