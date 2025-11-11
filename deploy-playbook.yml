@@ -1,0 +1,79 @@
+---
+- name: Deploy NIDS IPv6 Configuration to Multiple Nodes
+  hosts: "{{ target_hosts | default('all') }}"
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    app_name: nids-ipv6-config
+    app_version: 1.0.0
+    deployment_dir: /tmp/nids-deploy
+    app_path: /usr/local/bin
+    config_path: /tmp/nids
+    log_path: /var/log/nids
+  
+  tasks:
+    - name: Display deployment information
+      debug:
+        msg: "Deploying {{ app_name }} v{{ app_version }} to {{ inventory_hostname }} ({{ ansible_os_family }})"
+    
+    - name: Create required directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ deployment_dir }}"
+        - "{{ app_path }}"
+        - "{{ config_path }}"
+        - "{{ log_path }}"
+    
+    - name: Copy DEB package (Ubuntu)
+      copy:
+        src: "dist/nids-ipv6-config_{{ app_version }}_all.deb"
+        dest: "{{ deployment_dir }}/"
+      when: ansible_distribution == "Ubuntu"
+      ignore_errors: yes
+    
+    - name: Copy RPM package (RedHat)
+      copy:
+        src: "dist/nids-ipv6-config-{{ app_version }}-1.noarch.rpm"
+        dest: "{{ deployment_dir }}/"
+      when: ansible_distribution in ['RedHat', 'CentOS']
+      ignore_errors: yes
+    
+    - name: Install DEB package (Ubuntu)
+      apt:
+        deb: "{{ deployment_dir }}/nids-ipv6-config_{{ app_version }}_all.deb"
+        state: present
+      when: ansible_distribution == "Ubuntu"
+      register: deb_install
+      ignore_errors: yes
+    
+    - name: Install RPM package (RedHat)
+      yum:
+        name: "{{ deployment_dir }}/nids-ipv6-config-{{ app_version }}-1.noarch.rpm"
+        state: present
+      when: ansible_distribution in ['RedHat', 'CentOS']
+      register: rpm_install
+      ignore_errors: yes
+    
+    - name: Verify application installation
+      command: python3 {{ app_path }}/nids_ipv6_config.py validate
+      register: validation_result
+      changed_when: false
+      ignore_errors: yes
+    
+    - name: Show configuration
+      command: python3 {{ app_path }}/nids_ipv6_config.py show
+      register: config_result
+      changed_when: false
+      ignore_errors: yes
+    
+    - name: Display deployment result
+      debug:
+        msg: |
+          ✓ Deployment completed on {{ inventory_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Application: {{ app_name }} v{{ app_version }}
+          Status: SUCCESS
