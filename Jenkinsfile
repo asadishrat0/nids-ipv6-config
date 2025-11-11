@@ -14,9 +14,13 @@ pipeline {
     }
     
     environment {
-        APP_NAME = 'nids-ipv6-config'
-        APP_VERSION = '1.0.0'
-    }
+    APP_NAME = 'nids-ipv6-config'
+    APP_VERSION = '1.0.0'
+    DEPLOYMENT_ENV = "${params.DEPLOYMENT_ENV ?: 'BUILD_ONLY'}"
+    TARGET_HOSTS = "${params.TARGET_HOSTS ?: 'all'}"
+    DRY_RUN = "${params.DRY_RUN ?: 'true'}"
+    RUN_ANSIBLE = "${params.RUN_ANSIBLE ?: 'false'}"
+}
     
     stages {
         stage('Initialize') {
