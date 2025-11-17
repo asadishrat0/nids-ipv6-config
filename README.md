@@ -1,158 +1,143 @@
 # NIDS IPv6 Configuration Application
 
-## Overview
+A production-ready command-line tool for managing Network Intrusion Detection System (NIDS) IPv6 settings across Ubuntu 22.04 and Red Hat 9.6 servers.
 
-The NIDS IPv6 Configuration Application is a production-grade software package designed to manage Network Intrusion Detection System (NIDS) IPv6 settings across multiple Linux distributions. This application enables operators to configure IPv6 monitoring capabilities, manage traffic rules, and monitor system performance through a command-line interface.
+## Quick Overview
 
-**Supported Platforms:**
-- Red Hat 9.6 (RPM)
-- Ubuntu 22.04 LTS (DEB)
+This application lets you configure and manage IPv6 settings for NIDS monitoring through simple commands. Everything is stored in a configuration file and persists across reboots.
 
-## Project Structure
+**What it does:**
+- Enable/disable IPv6 monitoring
+- Configure listening addresses and ports
+- Manage logging levels and traffic rules
+- Set packet capture filters
+- Validate your configuration
 
-```
-nids-ipv6-config/
-├── src/
-│   └── nids_ipv6_config.py          # Main application
-├── packaging/
-│   └── nids-ipv6-config.spec        # RPM specification
-├── config/
-│   └── ipv6_config.json             # Default configuration
-├── debian/
-│   ├── control                      # DEB control file
-│   ├── postinst                     # DEB post-install script
-│   └── prerm                        # DEB pre-removal script
-├── tests/
-│   └── test_nids_config.py          # Unit tests
-├── Jenkinsfile                      # CI/CD pipeline
-├── README.md                        # This file
-├── INSTALL.md                       # Installation guide
-└── CONFIG.md                        # Configuration guide
-```
-
-## Features
-
-- **IPv6 Configuration Management** - Enable/disable IPv6 monitoring
-- **Port Management** - Configure listen ports (1-65535)
-- **Address Configuration** - Set IPv6 listen addresses
-- **Logging Control** - Multiple logging levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-- **Traffic Rules** - Enable/disable traffic rule enforcement
-- **Monitoring** - Enable/disable packet monitoring
-- **Alert Management** - Configure alert thresholds
-- **PCAP Filtering** - Set packet capture filters
-- **Configuration Persistence** - JSON-based configuration storage
-- **Audit Logging** - Comprehensive audit trail in `/var/log/nids/`
-- **Validation** - Built-in configuration validation
+**Platforms:**
+- Ubuntu 22.04 LTS (DEB package)
+- Red Hat 9.6 (RPM package)
 
 ## Installation
 
-### Quick Start - Ubuntu 22.04 LTS
+### Ubuntu 22.04
 
 ```bash
-# Install from DEB package
+# Install the package
 sudo apt-get update
 sudo apt-get install ./nids-ipv6-config_1.0.0-1_all.deb
 
-# Verify installation
-nids-ipv6-config show
-```
+# Verify it works
+sudo nids-ipv6-config show
 
-### Quick Start - Red Hat 9.6
 
-```bash
-# Install from RPM package
+# Install the package
 sudo yum install ./nids-ipv6-config-1.0.0-1.el9.noarch.rpm
 
-# Verify installation
-nids-ipv6-config show
-```
+# Verify it works
+sudo nids-ipv6-config show
 
-For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 
-## Usage
+## Basic Usage
 
-### Show Current Configuration
+### View Current Settings
 
 ```bash
 sudo nids-ipv6-config show
 ```
 
-### Enable IPv6 Monitoring
-
-```bash
-sudo nids-ipv6-config enable
+Output:
+```
+=== NIDS IPv6 Configuration ===
+ipv6_enabled.......................... True
+listen_address....................... ::
+listen_port.......................... 25826
+monitoring_enabled................... True
+traffic_rules_enabled................ True
+logging_level........................ INFO
+pcap_filter.......................... ip6
+alert_threshold...................... 100
+stats_interval....................... 60
+===================================
 ```
 
-### Disable IPv6 Monitoring
+### Enable/Disable IPv6 Monitoring
 
 ```bash
+# Turn it on
+sudo nids-ipv6-config enable
+
+# Turn it off
 sudo nids-ipv6-config disable
 ```
 
-### Configure IPv6 Address
+### Change Listen Address
 
 ```bash
+# Listen on all interfaces
+sudo nids-ipv6-config set-address ::
+
+# Listen on loopback only
 sudo nids-ipv6-config set-address ::1
-sudo nids-ipv6-config set-address fe80::1
+
+# Listen on specific address
+sudo nids-ipv6-config set-address 2001:db8::1
 ```
 
-### Configure Port
+### Change Port
 
 ```bash
-sudo nids-ipv6-config set-port 25826
+# Set to port 9000
+sudo nids-ipv6-config set-port 9000
+
+# Verify the change
+sudo nids-ipv6-config show | grep listen_port
 ```
 
-### Set Logging Level
+### Adjust Logging
 
 ```bash
+# Verbose logging for troubleshooting
 sudo nids-ipv6-config set-log-level DEBUG
+
+# Normal operation
 sudo nids-ipv6-config set-log-level INFO
+
+# Minimal logging
+sudo nids-ipv6-config set-log-level ERROR
 ```
 
-### Enable/Disable Traffic Rules
+### Manage Traffic Rules
 
 ```bash
+# Enable rule enforcement
 sudo nids-ipv6-config enable-rules
+
+# Disable rules
 sudo nids-ipv6-config disable-rules
 ```
 
-### Enable/Disable Monitoring
+### Set Packet Filter
 
 ```bash
-sudo nids-ipv6-config enable-monitoring
-sudo nids-ipv6-config disable-monitoring
-```
-
-### Set PCAP Filter
-
-```bash
+# Monitor all IPv6 traffic
 sudo nids-ipv6-config set-pcap-filter "ip6"
+
+# Monitor only HTTPS
 sudo nids-ipv6-config set-pcap-filter "tcp port 443"
+
+# Monitor DNS
+sudo nids-ipv6-config set-pcap-filter "udp port 53"
 ```
 
-### Configure Alert Threshold
-
-```bash
-sudo nids-ipv6-config set-alert-threshold 100
-```
-
-### Set Statistics Interval
-
-```bash
-sudo nids-ipv6-config set-stats-interval 60
-```
-
-### Validate Configuration
+### Validate Settings
 
 ```bash
 sudo nids-ipv6-config validate
 ```
 
-For detailed configuration options, see [CONFIG.md](CONFIG.md).
-
 ## Configuration File
 
-Default configuration location: `/etc/nids/ipv6_config.json`
+Configuration is stored at `/etc/nids/ipv6_config.json`:
 
 ```json
 {
@@ -169,119 +154,158 @@ Default configuration location: `/etc/nids/ipv6_config.json`
 }
 ```
 
-## Logging
+**Note:** You can edit this file directly, but it's safer to use commands above.
 
-Application logs are stored at: `/var/log/nids/ipv6_config.log`
+## Logs
 
-Log levels include DEBUG, INFO, WARNING, ERROR, and CRITICAL. Adjust logging via:
+Check application logs at `/var/log/nids/ipv6_config.log`:
+
 ```bash
+# View recent logs
+sudo tail -f /var/log/nids/ipv6_config.log
+
+# View last 50 lines
+sudo tail -50 /var/log/nids/ipv6_config.log
+```
+
+## Common Tasks
+
+### Production Setup
+
+```bash
+# Listen on all interfaces
+sudo nids-ipv6-config set-address ::
+
+# Standard logging
+sudo nids-ipv6-config set-log-level INFO
+
+# Enable monitoring
+sudo nids-ipv6-config enable
+sudo nids-ipv6-config enable-rules
+sudo nids-ipv6-config enable-monitoring
+
+# Verify
+sudo nids-ipv6-config show
+sudo nids-ipv6-config validate
+```
+
+### Development Setup
+
+```bash
+# Verbose logging
 sudo nids-ipv6-config set-log-level DEBUG
+
+# Listen locally
+sudo nids-ipv6-config set-address ::1
+
+# Lower alert threshold for testing
+sudo nids-ipv6-config set-alert-threshold 10
 ```
 
-## Requirements
-
-**System Requirements:**
-- Python 3.9 or later
-- Root/sudo privileges for configuration changes
-- Minimum 100MB disk space
-- Read/write access to `/etc/nids/` and `/var/log/nids/`
-
-**Python Dependencies:**
-- Built-in libraries only (standard library)
-- No external Python packages required
-
-## Build & Package
-
-### Build RPM
+### Troubleshooting Setup
 
 ```bash
-rpmbuild -bb packaging/nids-ipv6-config.spec
+# Enable debug logging
+sudo nids-ipv6-config set-log-level DEBUG
+
+# Check logs
+sudo tail -100 /var/log/nids/ipv6_config.log
+
+# Validate config
+sudo nids-ipv6-config validate
 ```
 
-### Build DEB
+## Backup & Restore
+
+### Backup Configuration
 
 ```bash
-dpkg-deb --build debian/
+# Quick backup
+sudo cp /etc/nids/ipv6_config.json /etc/nids/ipv6_config.json.backup
+
+# Timestamped backup
+sudo cp /etc/nids/ipv6_config.json /etc/nids/ipv6_config.json.$(date +%Y%m%d-%H%M%S)
 ```
 
-### Jenkins Pipeline
+### Restore Configuration
 
-Automated builds are managed through Jenkinsfile:
-- Syntax validation
-- Unit tests
-- Package creation (RPM & DEB)
-- Package validation
-- Integration tests
+```bash
+# Restore from backup
+sudo cp /etc/nids/ipv6_config.json.backup /etc/nids/ipv6_config.json
+
+# Verify
+sudo nids-ipv6-config show
+sudo nids-ipv6-config validate
+```
+
+## System Requirements
+
+- **OS:** Ubuntu 22.04 LTS or Red Hat 9.6
+- **Python:** 3.9 or later (pre-installed)
+- **Disk:** ~100MB free space
+- **Permissions:** Root/sudo access required
 
 ## Troubleshooting
 
-### Permission Denied
+### "Command not found"
 
-Most commands require root privileges. Use `sudo`:
+Make sure you're using `sudo`:
 ```bash
 sudo nids-ipv6-config show
 ```
 
-### Configuration File Not Found
+### "Permission denied"
 
-After installation, verify the config file exists:
+All commands require root. Use `sudo`:
 ```bash
+sudo nids-ipv6-config enable
+```
+
+### Configuration not persisting
+
+Your configuration should persist across reboots. If not, check:
+```bash
+# Check file permissions
 ls -la /etc/nids/ipv6_config.json
+
+# View recent logs
+sudo tail -50 /var/log/nids/ipv6_config.log
 ```
 
-### Invalid IPv6 Address
+### Changes not taking effect
 
-Validate your IPv6 address format:
-```bash
-# Valid addresses
-::1
-::
-fe80::1
-2001:db8::1
-```
-
-### Service Not Starting
-
-Check logs for errors:
-```bash
-sudo tail -f /var/log/nids/ipv6_config.log
-```
-
-### Validation Fails
-
-Run validation with detailed output:
+After making changes, validate your configuration:
 ```bash
 sudo nids-ipv6-config validate
 ```
 
-## Contributing
+## Uninstall
 
-1. Follow PEP 8 style guidelines
-2. Include unit tests for new features
-3. Update documentation with changes
-4. Test on both Ubuntu 22.04 and Red Hat 9.6
+### Ubuntu 22.04
 
-## Security Considerations
+```bash
+sudo apt-get remove nids-ipv6-config
 
-- Configuration files are readable only by root (mode 0640)
-- Audit trail maintained in system logs
-- Input validation on all configuration parameters
-- IPv6 address format validation
-- Port range validation (1-65535)
+# Optional: Remove config files
+sudo rm -rf /etc/nids
+sudo rm -rf /var/log/nids
+```
 
-## License
+### Red Hat 9.6
 
-MIT License - See LICENSE file for details
+```bash
+sudo yum remove nids-ipv6-config
+
+# Optional: Remove config files
+sudo rm -rf /etc/nids
+sudo rm -rf /var/log/nids
+```
+
+## For More Information
+
+- [Installation Guide](INSTALL.md) - Detailed installation steps
+- [Configuration Guide](CONFIG.md) - All configuration options explained
 
 ## Support
 
-For issues, questions, or contributions, please contact: devops@example.com
-
-## Changelog
-
-### Version 1.0.0 (November 2025)
-- Initial release
-- Full IPv6 configuration support
-- RPM and DEB packaging
-- Comprehensive logging
-- Jenkins CI/CD integration
+Issues or questions? Check the logs and validation output first, then contact your system administrator.

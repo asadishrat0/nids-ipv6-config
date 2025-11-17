@@ -5,9 +5,9 @@ setup(
     name='nids-ipv6-config',
     version='1.0.0',
     description='NIDS IPv6 Configuration Application',
-    author='DevOps Team',
-    author_email='devops@example.com',
-    url='https://github.com/your-org/nids-ipv6-config',
+    author='asad',
+    author_email='asadishrat@outlook.com',
+    url='https://github.com/asadishrat0/nids-ipv6-config',
     py_modules=['nids_ipv6_config'],
     package_dir={'': 'src'},
     entry_points={

@@ -1,186 +1,114 @@
-# NIDS IPv6 Configuration Application - Installation Guide
+# Installation Guide
 
-## Prerequisites
+## Before You Start
 
-### System Requirements
+Make sure your system meets these requirements:
 
-| Requirement | Details |
-|---|---|
-| **OS** | Red Hat 9.6 or Ubuntu 22.04 LTS |
-| **Python** | 3.9 or later |
-| **RAM** | Minimum 512MB |
-| **Disk Space** | Minimum 100MB |
-| **Permissions** | Root/sudo access required |
+- **OS:** Ubuntu 22.04 LTS or Red Hat 9.6
+- **Python:** 3.9 or later (usually pre-installed)
+- **Access:** Root or sudo privileges
+- **Disk:** ~100MB free space in `/`
 
-### Verify Prerequisites
+Check your system:
 
 ```bash
-# Check Python version
+# Check OS version
+cat /etc/os-release | grep "VERSION_ID"
+
+# Check Python
 python3 --version
 
-# Check if you have sudo access
-sudo echo "Sudo access verified"
-
-# Check available disk space
+# Check disk space
 df -h /
 ```
 
-## Installation on Ubuntu 22.04 LTS
+## Installation on Ubuntu 22.04
 
-### Method 1: Using APT (Recommended)
-
-If added to APT repository:
+### Quick Install
 
 ```bash
-# Update package index
+# Download and install
 sudo apt-get update
-
-# Install the package
-sudo apt-get install nids-ipv6-config
-
-# Verify installation
-nids-ipv6-config --help
-```
-
-### Method 2: Manual DEB Installation
-
-```bash
-# Download the DEB package
-wget https://repo.example.com/nids-ipv6-config_1.0.0-1_all.deb
-
-# Install the package
 sudo apt-get install ./nids-ipv6-config_1.0.0-1_all.deb
 
 # Verify installation
-nids-ipv6-config show
-
-# Check logs
-tail -f /var/log/nids/ipv6_config.log
-```
-
-### Method 3: From Source (Development)
-
-```bash
-# Clone the repository
-git clone https://github.com/your-org/nids-ipv6-config.git
-cd nids-ipv6-config
-
-# Install Python dependencies (if any)
-pip3 install -r requirements.txt
-
-# Install application
-sudo python3 setup.py install
-
-# Or create DEB package
-dpkg-deb --build debian/
-sudo apt-get install ./nids-ipv6-config_1.0.0-1_all.deb
-```
-
-### Post-Installation Setup (Ubuntu)
-
-```bash
-# Create configuration directory
-sudo mkdir -p /etc/nids
-sudo mkdir -p /var/log/nids
-
-# Set proper permissions
-sudo chmod 755 /etc/nids
-sudo chmod 755 /var/log/nids
-
-# Initialize configuration
 sudo nids-ipv6-config show
+```
 
-# Verify installation
-sudo nids-ipv6-config validate
+### What Gets Installed
+
+- Binary: `/usr/bin/nids-ipv6-config`
+- Config: `/etc/nids/ipv6_config.json`
+- Logs: `/var/log/nids/ipv6_config.log`
+
+### Troubleshooting Ubuntu Install
+
+**"File not found" error:**
+```bash
+# Make sure you're in the directory with the .deb file
+ls *.deb
+
+# Try with full path
+sudo apt-get install /full/path/to/nids-ipv6-config_1.0.0-1_all.deb
+```
+
+**"Permission denied":**
+```bash
+# Always use sudo
+sudo apt-get install ./nids-ipv6-config_1.0.0-1_all.deb
+```
+
+**Installation hangs:**
+```bash
+# Try force package configuration
+sudo dpkg --configure -a
+sudo apt-get install -f
 ```
 
 ## Installation on Red Hat 9.6
 
-### Method 1: Using YUM (Recommended)
-
-If added to YUM repository:
+### Quick Install
 
 ```bash
-# Update package index
-sudo yum update -y
-
-# Install the package
-sudo yum install nids-ipv6-config
-
-# Verify installation
-nids-ipv6-config --help
-```
-
-### Method 2: Manual RPM Installation
-
-```bash
-# Download the RPM package
-wget https://repo.example.com/nids-ipv6-config-1.0.0-1.el9.noarch.rpm
-
-# Install the package
+# Install directly
 sudo yum install ./nids-ipv6-config-1.0.0-1.el9.noarch.rpm
 
 # Verify installation
-nids-ipv6-config show
-
-# Check logs
-tail -f /var/log/nids/ipv6_config.log
-```
-
-### Method 3: From Source (Development)
-
-```bash
-# Install build dependencies
-sudo yum install rpm-build python3-devel -y
-
-# Clone the repository
-git clone https://github.com/your-org/nids-ipv6-config.git
-cd nids-ipv6-config
-
-# Build RPM package
-rpmbuild -bb packaging/nids-ipv6-config.spec
-
-# Install the RPM
-sudo yum install ~/rpmbuild/RPMS/noarch/nids-ipv6-config-1.0.0-1.el9.noarch.rpm
-```
-
-### Post-Installation Setup (Red Hat)
-
-```bash
-# Create configuration directory
-sudo mkdir -p /etc/nids
-sudo mkdir -p /var/log/nids
-
-# Set proper permissions
-sudo chmod 755 /etc/nids
-sudo chmod 755 /var/log/nids
-
-# Initialize configuration
 sudo nids-ipv6-config show
-
-# Verify installation
-sudo nids-ipv6-config validate
 ```
 
-## Verification
+### What Gets Installed
 
-### Check Installation Success
+- Binary: `/usr/bin/nids-ipv6-config`
+- Config: `/etc/nids/ipv6_config.json`
+- Logs: `/var/log/nids/ipv6_config.log`
 
+### Troubleshooting Red Hat Install
+
+**"File not found" error:**
 ```bash
-# Verify binary location
-which nids-ipv6-config
+# Make sure you're in the directory with the .rpm file
+ls *.rpm
 
-# Verify file permissions
-ls -la /usr/bin/nids-ipv6-config
-
-# Verify configuration directory
-ls -la /etc/nids/
-
-# Verify log directory
-ls -la /var/log/nids/
+# Try with full path
+sudo yum install /full/path/to/nids-ipv6-config-1.0.0-1.el9.noarch.rpm
 ```
 
-### Run Tests
+**RPM conflicts:**
+```bash
+# Check if already installed
+rpm -qa | grep nids
+
+# Remove old version
+sudo yum remove nids-ipv6-config
+
+# Install new version
+sudo yum install ./nids-ipv6-config-1.0.0-1.el9.noarch.rpm
+```
+
+## Post-Installation
+
+After installation on either system:
 
 ```bash
 # Show current configuration
@@ -189,170 +117,151 @@ sudo nids-ipv6-config show
 # Validate configuration
 sudo nids-ipv6-config validate
 
-# Test enable/disable
-sudo nids-ipv6-config enable
-sudo nids-ipv6-config disable
-
-# Test address configuration
-sudo nids-ipv6-config set-address ::1
-sudo nids-ipv6-config show
+# Check logs
+sudo tail -20 /var/log/nids/ipv6_config.log
 ```
 
-### Expected Output
-
-```bash
-$ sudo nids-ipv6-config show
-
+Expected output from `show`:
+```
 === NIDS IPv6 Configuration ===
-ipv6_enabled................................ True
-listen_address........................... ::
-listen_port............................. 25826
-monitoring_enabled...................... True
-traffic_rules_enabled................... True
-logging_level............................ INFO
-max_packet_size....................... 65535
-pcap_filter............................. ip6
-alert_threshold......................... 100
-stats_interval........................... 60
+ipv6_enabled.......................... True
+listen_address....................... ::
+listen_port.......................... 25826
+monitoring_enabled................... True
+traffic_rules_enabled................ True
+logging_level........................ INFO
+pcap_filter.......................... ip6
+alert_threshold...................... 100
+stats_interval....................... 60
 ===================================
 ```
 
-## Upgrading
+If you see this, installation was successful!
 
-### Ubuntu 22.04 LTS
+## Verify Installation
 
-```bash
-# Download new version
-wget https://repo.example.com/nids-ipv6-config_1.1.0-1_all.deb
-
-# Upgrade package
-sudo apt-get install ./nids-ipv6-config_1.1.0-1_all.deb
-
-# Verify upgrade
-nids-ipv6-config show
-```
-
-### Red Hat 9.6
+### Test the Application
 
 ```bash
-# Download new version
-wget https://repo.example.com/nids-ipv6-config-1.1.0-1.el9.noarch.rpm
+# Get help
+sudo nids-ipv6-config --help
 
-# Upgrade package
-sudo yum upgrade ./nids-ipv6-config-1.1.0-1.el9.noarch.rpm
+# Show config
+sudo nids-ipv6-config show
 
-# Verify upgrade
-nids-ipv6-config show
+# Validate config
+sudo nids-ipv6-config validate
+
+# Try changing a setting
+sudo nids-ipv6-config set-log-level DEBUG
+sudo nids-ipv6-config show
+sudo nids-ipv6-config set-log-level INFO
 ```
 
-## Uninstallation
+### Check File Permissions
 
-### Ubuntu 22.04 LTS
+```bash
+# Check binary
+ls -la /usr/bin/nids-ipv6-config
+
+# Check config directory
+ls -la /etc/nids/
+
+# Check config file
+ls -la /etc/nids/ipv6_config.json
+
+# Check log directory
+ls -la /var/log/nids/
+```
+
+Everything should be owned by root and readable.
+
+## Upgrade
+
+### From Older Version to 1.0.0
+
+**Ubuntu:**
+```bash
+# Backup current config
+sudo cp /etc/nids/ipv6_config.json /etc/nids/ipv6_config.json.old
+
+# Upgrade
+sudo apt-get install ./nids-ipv6-config_1.0.0-1_all.deb
+
+# Verify
+sudo nids-ipv6-config show
+```
+
+**Red Hat:**
+```bash
+# Backup current config
+sudo cp /etc/nids/ipv6_config.json /etc/nids/ipv6_config.json.old
+
+# Upgrade
+sudo yum upgrade ./nids-ipv6-config-1.0.0-1.el9.noarch.rpm
+
+# Verify
+sudo nids-ipv6-config show
+```
+
+## Uninstall
+
+### Ubuntu
 
 ```bash
 # Remove package
 sudo apt-get remove nids-ipv6-config
 
-# Remove configuration (optional)
+# Optional: Remove all configuration
 sudo rm -rf /etc/nids
 sudo rm -rf /var/log/nids
 ```
 
-### Red Hat 9.6
+### Red Hat
 
 ```bash
 # Remove package
 sudo yum remove nids-ipv6-config
 
-# Remove configuration (optional)
+# Optional: Remove all configuration
 sudo rm -rf /etc/nids
 sudo rm -rf /var/log/nids
 ```
 
-## Troubleshooting
+## Backup Before Changes
 
-### Issue: "Command not found"
-
-```bash
-# Verify PATH includes /usr/bin
-echo $PATH
-
-# Try full path
-/usr/bin/nids-ipv6-config show
-```
-
-### Issue: "Permission denied"
+Always backup your configuration:
 
 ```bash
-# All commands require sudo
-sudo nids-ipv6-config show
+# Simple backup
+sudo cp /etc/nids/ipv6_config.json /etc/nids/ipv6_config.json.backup
 
-# Check file permissions
-ls -la /usr/bin/nids-ipv6-config
+# Backup with timestamp
+sudo cp /etc/nids/ipv6_config.json /etc/nids/ipv6_config.json.$(date +%Y%m%d)
 ```
 
-### Issue: Configuration file missing
+## Getting Help
 
-```bash
-# Check if file exists
-ls -la /etc/nids/ipv6_config.json
+If something goes wrong:
 
-# Create from example
-sudo cp /etc/nids/ipv6_config.json.example /etc/nids/ipv6_config.json
-sudo chmod 640 /etc/nids/ipv6_config.json
-```
+1. **Check logs:**
+   ```bash
+   sudo tail -50 /var/log/nids/ipv6_config.log
+   ```
 
-### Issue: Cannot write to log directory
+2. **Validate config:**
+   ```bash
+   sudo nids-ipv6-config validate
+   ```
 
-```bash
-# Check directory permissions
-ls -la /var/log/nids/
+3. **Check file permissions:**
+   ```bash
+   ls -la /etc/nids/
+   ls -la /var/log/nids/
+   ```
 
-# Fix permissions
-sudo chmod 755 /var/log/nids/
-sudo chown root:root /var/log/nids/
-```
-
-### Issue: Application crashes
-
-```bash
-# Check logs for errors
-sudo tail -100 /var/log/nids/ipv6_config.log
-
-# Run validation
-sudo nids-ipv6-config validate
-
-# Try manual operation
-sudo python3 /usr/bin/nids-ipv6-config show
-```
-
-## Integration with Existing Systems
-
-### Adding to APT Repository
-
-1. Place DEB in repository directory
-2. Update Packages index
-3. Sign with GPG key
-4. Update apt sources
-
-### Adding to YUM Repository
-
-1. Place RPM in repository directory
-2. Run `createrepo`
-3. Sign with GPG key
-4. Update yum configuration
-
-### CI/CD Integration
-
-See Jenkinsfile for automated build and deployment pipeline.
-
-## Next Steps
-
-1. Read [CONFIG.md](CONFIG.md) for configuration options
-2. Review [README.md](README.md) for usage examples
-3. Check logs at `/var/log/nids/ipv6_config.log`
-4. Configure IPv6 settings for your environment
-
-## Support
-
-For installation issues or questions, contact: devops@example.com
+4. **Try re-installing:**
+   ```bash
+   sudo apt-get remove nids-ipv6-config
+   sudo apt-get install ./nids-ipv6-config_1.0.0-1_all.deb
+   ```
